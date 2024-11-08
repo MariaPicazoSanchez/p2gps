@@ -10,4 +10,4 @@ COPY drop/* /usr/local/app/
 
 EXPOSE 8080
 
-ENTRYPOINT sh run.sh
+ENTRYPOINT sh /usr/local/app/run.sh
