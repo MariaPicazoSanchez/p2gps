@@ -28,7 +28,7 @@ services:
         limits:
           cpus: "0.3"
           memory: 500M
-      restart_policy:
+      # restart_policy:
         # condition: on-failure
     ports:
       - "8080:8080"
