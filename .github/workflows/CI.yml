@@ -103,4 +103,4 @@ jobs:
           inlineScript: |
             az webapp start \
               --name p2gps \
-              --resource-group recursosGPS
+              --resource-group p2gps
