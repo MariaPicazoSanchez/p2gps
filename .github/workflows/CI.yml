@@ -92,7 +92,7 @@ jobs:
           inlineScript: |
             az webapp config appsettings set \
               --name p2gps \
-              --resource-group recursosGPS \
+              --resource-group p2gps \
               --settings WEBSITES_ENABLE_APP_SERVICE_STORAGE=true
 
       # Iniciar la aplicación en Azure
