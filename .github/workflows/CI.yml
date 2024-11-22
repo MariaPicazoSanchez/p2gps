@@ -91,7 +91,7 @@ jobs:
           azcliversion: latest
           inlineScript: |
             az webapp config appsettings set \
-              --name p2gps \
+              --name p2gps2024 \
               --resource-group p2gps \
               --settings WEBSITES_ENABLE_APP_SERVICE_STORAGE=true
 
@@ -102,5 +102,5 @@ jobs:
           azcliversion: latest
           inlineScript: |
             az webapp start \
-              --name p2gps \
+              --name p2gps2024 \
               --resource-group p2gps
