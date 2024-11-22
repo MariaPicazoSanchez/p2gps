@@ -1,6 +1,4 @@
-
 name: CI solamente
-
 on:
   push:
     branches: [ master ]
@@ -12,61 +10,72 @@ jobs:
     permissions:
       contents: write
       packages: write
-      id-token: write
+      id-token: write # Necesario para OIDC en azure/login
+
     steps:
+      # Checkout del repositorio
       - name: Checkout repository
-        uses: actions/checkout@v4 # descarga el repositorio en el ejecutor
-   
+        uses: actions/checkout@v4
+
+      # Configuración de Java 8
       - name: Set up JDK 8
         uses: actions/setup-java@v4
         with:
           java-version: '8'
           distribution: 'adopt'
           server-id: github
-          settings-path: ${{ github.workspace }} # location for the settings.xml file
+          settings-path: ${{ github.workspace }}
 
-  #### BUILDS ######
+      # Configuración de Gradle
       - uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: 2.1
-    
+
+      # Build del Frontend
       - name: Build del Front
         working-directory: src/Clients
         run: ./gradlew build
 
+      # Subida del artefacto del Frontend
       - name: Upload Front build artifact
-        uses: actions/upload-artifact@v4 # guarda en Artifacts de la Acción el resultado del build
+        uses: actions/upload-artifact@v4
         with:
           name: Clients
           path: src/Clients/build/libs
 
+      # Build del Backend
       - name: Build del Back
         working-directory: src/Backend/OrderService
         run: ./gradlew build test
 
-      - name: Dockerizar el front y el backend
+      # Construcción de imágenes Docker
+      - name: Dockerizar el Frontend y Backend
         run: |
-          cp src/Clients/build/libs/*.war deploy/docker/Clients/drop # copiar el resultado del build para la nueva imagen
+          cp src/Clients/build/libs/*.war deploy/docker/Clients/drop
           docker build -t p2gps/web deploy/docker/Clients
-          cp src/Backend/OrderService/build/libs/ordering* deploy/docker/Order/drop # copiar el resultado del build para la nueva imagen
+          cp src/Backend/OrderService/build/libs/ordering* deploy/docker/Order/drop
           docker build -t p2gps/order deploy/docker/Order
-  #### SUBIR IMAGENES A DOCKERHUB ####
+
+      # Login en DockerHub
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }} # crear los secretos en Settings --> Secrets/Actions/New Repository Secret
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
+      # Etiquetar imágenes para DockerHub
       - name: Etiquetar con formato DockerHub
         run: |
           docker tag p2gps/web ${{ secrets.DOCKERHUB_USERNAME }}/p2gps:web
           docker tag p2gps/order ${{ secrets.DOCKERHUB_USERNAME }}/p2gps:order
+
+      # Subir imágenes a DockerHub
       - name: Push a DockerHub
         run: |
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/p2gps:order
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/p2gps:web
 
-  ### LOGIN EN AZURE
+      # Login en Azure con OIDC
       - name: Log into Azure
         uses: azure/login@v2
         with:
@@ -74,12 +83,24 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           enable-AzPSSession: true
-          auth-type: 'oidc'
 
-    ### Desplegar nuestro App Service multicontenedor
-      - name: Azure CLI script
+      # Configurar App Settings en Azure
+      - name: Configurar App Settings en Azure
         uses: azure/CLI@v2
         with:
           azcliversion: latest
           inlineScript: |
-            az webapp start --name p2gps --resource-group recursosGPS --settings WEBSITES_ENABLE_APP_SERVICE_STORAGE=TRUE
+            az webapp config appsettings set \
+              --name p2gps \
+              --resource-group recursosGPS \
+              --settings WEBSITES_ENABLE_APP_SERVICE_STORAGE=true
+
+      # Iniciar la aplicación en Azure
+      - name: Iniciar la aplicación en Azure
+        uses: azure/CLI@v2
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az webapp start \
+              --name p2gps \
+              --resource-group recursosGPS
