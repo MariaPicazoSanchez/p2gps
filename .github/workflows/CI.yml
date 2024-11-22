@@ -74,6 +74,7 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           enable-AzPSSession: true
+          auth-type: 'oidc'
 
     ### Desplegar nuestro App Service multicontenedor
       - name: Azure CLI script
